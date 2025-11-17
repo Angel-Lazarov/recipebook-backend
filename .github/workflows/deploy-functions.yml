@@ -26,4 +26,4 @@ jobs:
         working-directory: functions
         env:
           FIREBASE_TOKEN: ${{ secrets.FIREBASE_TOKEN }}
-        run: npm run deploy
+        run: npx firebase deploy --only functions
