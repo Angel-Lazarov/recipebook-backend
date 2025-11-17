@@ -21,7 +21,7 @@ export const config = {
         secret: requireEnv("JWT_SECRET"),
     },
     firebase: {
-        keyPath: requireEnv("FIREBASE_KEY"),
+        keyPath: requireEnv("MYAPP_FIREBASE_KEY"),
     },
     r2: {
         accessKey: requireEnv("R2_ACCESS_KEY"),

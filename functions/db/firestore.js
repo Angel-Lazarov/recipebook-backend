@@ -10,7 +10,7 @@ import fs from "fs";
 import { config } from "../config/config.js";
 
 
-// достъпваме в .env файла записа с ключ FIREBASE_KEY
+// достъпваме в .env файла записа с ключ MYAPP_FIREBASE_KEY
 const serviceAccountPath = config.firebase.keyPath;
 
 // отвори файла от пътя, 

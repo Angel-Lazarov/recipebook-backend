@@ -91,13 +91,19 @@ POST /api/auth/login
 POST /api/auth/register
 */
 
-// Път до файловете на сертификата
-const sslOptions = {
-    key: fs.readFileSync(path.join('certs', 'server.key')),
-    cert: fs.readFileSync(path.join('certs', 'server.cert')),
-};
+// Стартиране на локален HTTPS сървър само за development
+if (process.env.NODE_ENV !== "production") {
+    // Път до файловете на сертификата
+    const sslOptions = {
+        key: fs.readFileSync(path.join('certs', 'server.key')),
+        cert: fs.readFileSync(path.join('certs', 'server.cert')),
+    };
 
-// Стартиране на HTTPS сървър
-https.createServer(sslOptions, app).listen(config.server.port, () => {
-    console.log(`HTTPS server is running on https://localhost:${config.server.port}`);
-});
+    // Стартиране на HTTPS сървър
+    https.createServer(sslOptions, app).listen(config.server.port, () => {
+        console.log(`HTTPS server is running on https://localhost:${config.server.port}`);
+    });
+}
+
+// Експортираме app за Firebase Functions
+export default app;

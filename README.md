@@ -22,19 +22,6 @@ cd recipesbook-api
 npm install
 ```
 
-Създай файл `.env` в root директорията:
-```
-FIREBASE_KEY=./config/recipesbook-db-firebase-adminsdk-fbsvc-31066ccb8c.json
-JWT_SECRET=your_generated_secret_key
-```
-
-Стартирай HTTPS сървъра:
-```bash
-node server.js
-# или
-npm run dev
-```
-
 ## 🔐 Удостоверяване (Authentication Flow)
 
 - Регистрация: потребителят се създава в колекцията `users`, а паролата се хешира с bcrypt.
