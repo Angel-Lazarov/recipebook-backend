@@ -16,7 +16,8 @@ const serviceAccountPath = config.firebase.keyPath;
 // отвори файла от пътя, 
 // прочети съдържанието му като текст (utf8), 
 // парсни текста в JavaScript обект чрез JSON.parse
-const serviceAccount = JSON.parse(fs.readFileSync(serviceAccountPath, "utf8"));
+// const serviceAccount = JSON.parse(fs.readFileSync(serviceAccountPath, "utf8")); //for local use
+const serviceAccount = JSON.parse(process.env.FIREBASE_ADMIN_SDK);  // for Render use
 
 //Инициализация на Firebase Admin SDK
 admin.initializeApp({
