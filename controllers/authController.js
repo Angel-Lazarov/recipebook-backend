@@ -135,7 +135,7 @@ export async function loginUser(req, res) {
 export async function logoutUser(req, res) {
     try {
         // Изчистваме HttpOnly cookie
-        res.clearCookie("token", { httpOnly: true, secure: true, sameSite: "strict" });
+        res.clearCookie("token", { httpOnly: true, secure: true, sameSite: "None" });
         res.status(200).json({ message: "Успешен logout" });
     } catch (err) {
         console.error("Logout error:", err);
