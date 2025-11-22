@@ -1,0 +1,36 @@
+name: Ping Backend Health Every 10 Minutes
+
+on:
+  schedule:
+    # от 04:00 до 22:59 UTC → покрива 06:00–01:00 BG (зима/лято)
+    - cron: "*/10 4-22 * * *"
+  workflow_dispatch:
+
+jobs:
+  ping-health:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Ping Render Backend /health
+        run: |
+          echo "----------------------------------------"
+          echo "📡 HEALTH CHECK START: $(date)"
+          echo "----------------------------------------"
+
+          RESPONSE=$(curl -s --max-time 8 -w "\n%{http_code}" https://recipebook-backend-n3c2.onrender.com/health)
+          BODY=$(echo "$RESPONSE" | head -n 1)
+          STATUS=$(echo "$RESPONSE" | tail -n 1)
+
+          echo "➡️  Response body: $BODY"
+          echo "➡️  HTTP status: $STATUS"
+
+          if [ -z "$BODY" ]; then
+            echo "❌ No response body — network or DNS issue."
+            exit 1
+          fi
+
+          if [ "$STATUS" -ne 200 ]; then
+            echo "❌ Backend is DOWN or returned non-200!"
+            exit 1
+          fi
+
+          echo "✅ Backend is UP and healthy!"
