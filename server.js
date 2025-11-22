@@ -11,9 +11,9 @@
 import express from "express";
 import cors from "cors";
 import cookieParser from "cookie-parser";
-import https from "https";
-import fs from "fs";
-import path from "path";
+// import https from "https";
+// import fs from "fs";
+// import path from "path";
 import routes from './routes/index.js'; //импортиране на router в app.js
 import { config } from "./config/config.js"; // <-- тук ползваме config.js
 import { validateAndSanitize } from "./middleware/validateAndSanitize.js";
@@ -62,6 +62,11 @@ app.use("/recipes", (req, res, next) => {
 });
 app.use(cookieParser());
 
+// преди app.use("/api", routes)
+app.get("/health", (req, res) => {
+    res.status(200).json({ status: "ok", timestamp: Date.now() });
+});
+
 // CSRF защита за всички state-changing методи
 app.use(csrfProtection);
 
@@ -80,7 +85,6 @@ app.use((req, res, next) => {
     }
     next();
 });
-
 
 // Mount routes
 app.use("/api", routes);
