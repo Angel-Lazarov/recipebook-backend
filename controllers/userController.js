@@ -155,85 +155,87 @@ export async function getUserById(req, res) {
 
 // POST /users/forgot-password
 export async function forgotPassword(req, res) {
-  try {
-    const { email } = req.body;
-    if (!email) return res.status(400).json({ error: "Email е задължителен." });
+    try {
+        const { email } = req.body;
+        if (!email) return res.status(400).json({ error: "Email е задължителен." });
 
-    // Търсим потребителя по email
-    const snapshot = await db.collection("users").where("email", "==", email).get();
-    if (snapshot.empty) {
-      // Винаги връщаме едно и също съобщение за безопасност
-      return res.status(200).json({
-        msg: "Ако имейлът съществува, ще получите линк за смяна на парола.",
-        remaining: null
-      });
-    }
+        // Търсим потребителя по email
+        const snapshot = await db.collection("users").where("email", "==", email).get();
+        if (snapshot.empty) {
+            // Винаги връщаме едно и също съобщение за безопасност
+            return res.status(200).json({
+                msg: "Ако имейлът съществува, ще получите линк за смяна на парола.",
+                remaining: null
+            });
+        }
 
-    const userDoc = snapshot.docs[0];
-    const userId = userDoc.id;
+        const userDoc = snapshot.docs[0];
+        const userId = userDoc.id;
 
-    const userResetRef = db.collection("passwordResets").doc(userId);
-    const resetSnap = await userResetRef.get();
-    const now = Date.now();
-    const today = new Date().toISOString().slice(0, 10); // "YYYY-MM-DD"
+        const userResetRef = db.collection("passwordResets").doc(userId);
+        const resetSnap = await userResetRef.get();
+        const now = Date.now();
+        const today = new Date().toISOString().slice(0, 10); // "YYYY-MM-DD"
 
-    let requestsToday = 0;
-    let lastRequestedAt = 0;
+        let requestsToday = 0;
+        let lastRequestedAt = 0;
 
-    if (resetSnap.exists) {
-      const data = resetSnap.data();
-      requestsToday = data.day === today ? data.requestsToday : 0;
-      lastRequestedAt = data.lastRequestedAt || 0;
+        if (resetSnap.exists) {
+            const data = resetSnap.data();
+            requestsToday = data.day === today ? data.requestsToday : 0;
+            lastRequestedAt = data.lastRequestedAt || 0;
 
-      // cooldown 60 секунди
-      if (now - lastRequestedAt < 60 * 1000) {
-        return res.status(429).json({
-          error: "cooldown_active",
-          remaining: 5 - requestsToday
+            // cooldown 60 секунди
+            if (now - lastRequestedAt < 60 * 1000) {
+                return res.status(429).json({
+                    error: "cooldown_active",
+                    remaining: 5 - requestsToday
+                });
+            }
+
+            // дневен лимит 5 заявки
+            if (requestsToday >= 5) {
+                return res.status(429).json({
+                    error: "daily_limit_reached",
+                    remaining: 0
+                });
+            }
+        }
+
+        // Генерираме нов токен
+        const resetToken = crypto.randomBytes(32).toString("hex");
+        const expiresAt = now + 15 * 60 * 1000; // 15 минути валидност
+
+        // Записваме/обновяваме документа
+        await userResetRef.set({
+            resetToken,
+            expiresAt,
+            lastRequestedAt: now,
+            requestsToday: requestsToday + 1,
+            day: today
         });
-      }
 
-      // дневен лимит 5 заявки
-      if (requestsToday >= 5) {
-        return res.status(429).json({
-          error: "daily_limit_reached",
-          remaining: 0
+        // Създаваме линка
+        const resetLink = `${config.server.frontendUrl}/reset-password/${resetToken}`;
+
+
+        console.log("📧 Ще се опитаме да пращаме имейл на:", email);
+        // Пращаме имейл
+        await sendEmail(
+            email,
+            "Възстановяване на парола",
+            `<p>Здравей! Кликни <a href="${resetLink}">тук</a>, за да смениш паролата си. Линкът е валиден 15 минути.</p>`
+        );
+
+        // Връщаме стандартно съобщение + оставащи заявки
+        res.json({
+            msg: "Ако имейлът съществува, ще получите линк за смяна на парола.",
+            remaining: 5 - (requestsToday + 1)
         });
-      }
+    } catch (err) {
+        console.error("Forgot password error:", err);
+        res.status(500).json({ error: "Възникна грешка при обработка на заявката." });
     }
-
-    // Генерираме нов токен
-    const resetToken = crypto.randomBytes(32).toString("hex");
-    const expiresAt = now + 15 * 60 * 1000; // 15 минути валидност
-
-    // Записваме/обновяваме документа
-    await userResetRef.set({
-      resetToken,
-      expiresAt,
-      lastRequestedAt: now,
-      requestsToday: requestsToday + 1,
-      day: today
-    });
-
-    // Създаваме линка
-    const resetLink = `${config.server.frontendUrl}/reset-password/${resetToken}`;
-
-    // Пращаме имейл
-    await sendEmail(
-      email,
-      "Възстановяване на парола",
-      `<p>Здравей! Кликни <a href="${resetLink}">тук</a>, за да смениш паролата си. Линкът е валиден 15 минути.</p>`
-    );
-
-    // Връщаме стандартно съобщение + оставащи заявки
-    res.json({
-      msg: "Ако имейлът съществува, ще получите линк за смяна на парола.",
-      remaining: 5 - (requestsToday + 1)
-    });
-  } catch (err) {
-    console.error("Forgot password error:", err);
-    res.status(500).json({ error: "Възникна грешка при обработка на заявката." });
-  }
 }
 
 // POST /users/reset-password/:token
