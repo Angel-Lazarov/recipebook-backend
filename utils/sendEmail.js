@@ -2,6 +2,10 @@
 import nodemailer from "nodemailer";
 import { config } from "../config/config.js";
 
+console.log("🔹 Brevo user:", config.brevo.user);
+console.log("🔹 Brevo sender:", config.brevo.sender);
+console.log("🔹 Brevo pass length:", config.brevo.pass?.length);
+
 export async function sendEmail(to, subject, html) {
     const transporter = nodemailer.createTransport({
         host: "smtp-relay.brevo.com", // това е SMTP хостът на Brevo
